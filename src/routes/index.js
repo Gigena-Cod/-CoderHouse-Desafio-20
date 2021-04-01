@@ -78,9 +78,11 @@ router.get('/productos',async (req,res) => {
     
     if(admin === true){
         await cargarItems()    
+        await res.status(200)
         await res.render('./layouts/products_admin',{'productos': productos,'admin':admin})
     }else{
         await cargarItems()    
+        await res.status(200)
         await res.render('./layouts/productos',{'productos': productos,'admin':admin})
     }   
 
@@ -91,10 +93,12 @@ router.post('/productos/add',async (req,res) => {
      await newItem(req.body)     
 
      if(admin == true){
-        await cargarItems()    
+        await cargarItems()  
+        await res.status(200)  
         await res.redirect('/productos') 
     }else{
-        await cargarItems()    
+        await cargarItems() 
+        await res.status(200)   
         await res.redirect('/productos') 
     }
         
@@ -107,6 +111,7 @@ router.get('/borrar/:codigo',async (req,res)=>{
          const {codigo} = req.params  
 
          deleteItem(codigo)
+         res.status(200)
          res.redirect('/productos')    
         
     } catch (error) {
@@ -122,7 +127,8 @@ router.get('/editar-form/:cod',async (req,res)=>{
     try {
          //OBTENEMOS EL ID
          const {cod} = req.params  
-         const product = await Productos.find({ codigo:cod})          
+         const product = await Productos.find({ codigo:cod})  
+         await res.status(200)        
          await res.render('./layouts/edit',{'Producto': product }) 
         
     } catch (error) {
@@ -148,8 +154,10 @@ router.post('/editar/:id',async (req,res)=>{
           product.stock=req.body.stock 
           product.descripcion=req.body.descripcion
           console.log(product)
-          product.save()        
+          product.save()   
+           res.status(200)     
           res.redirect('/productos') 
+         
         
     } catch (error) {
 
@@ -161,17 +169,21 @@ router.post('/editar/:id',async (req,res)=>{
     //   ---------------------------------------------
     //   CHAT
 router.get('/chat',async (req,res) => {
+     
     await cargarMessages()
+    res.status(200)    
     await res.render('./layouts/messages',{'mensajes':mensajes})
 })
 
 router.post('/chat/add', async (req,res) => {
+    
     let time = moment().format(); 
     const  addNewMessage = {autor:req.body.autor,
                         mensaje:req.body.mensaje,
                         now:moment(time).format('DD/MM/YYYY HH:MM:SS')}    
     await newMessage(addNewMessage)
-    res.redirect('/chat')
+    await res.status(200) 
+    await res.redirect('/chat')
 })
 
 module.exports=router
