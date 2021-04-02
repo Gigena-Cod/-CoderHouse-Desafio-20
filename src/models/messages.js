@@ -9,5 +9,4 @@ const messageSchema = new Schema({
     versionKey: false // You should be aware of the outcome after set to false
 }
 )
-
-module.exports = mongoose.model('mensajes',messageSchema)
+const mensajes=module.exports = mongoose.model('mensajes',messageSchema)

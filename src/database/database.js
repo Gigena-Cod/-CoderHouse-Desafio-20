@@ -18,19 +18,10 @@
          }
          
      
-     }
-     
-     desconectar = async () =>{
-         try {
-             await mongoose.connection.close()
-             console.log('Disconect database')
-         } catch (err) {
-             console.log(err)
-         }
-     }
+     }     
+
      
      
-     module.exports= {
-         desconectar,
+     module.exports= {         
          conectar
      }

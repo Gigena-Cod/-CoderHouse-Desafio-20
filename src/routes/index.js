@@ -13,12 +13,11 @@ const Mensajes = require('../models/messages')
 const bodyParser = require('body-parser');
 
 let server = require('../app')
+const products = require('../models/products')
 let admin = server.admin
 
 // create application/x-www-form-urlencoded parser
-router.use=bodyParser.urlencoded({ extended: false })
-
-
+router.use=bodyParser.urlencoded({ extended: true })
 
 
 
@@ -31,159 +30,152 @@ newItem = async (prod) => {
     await newProduct.save()
 }
 
-deleteItem = async (cod) => {
-    try {
-        
-    await Productos.deleteOne({codigo:cod})
-    await console.log('Object deleted')
-    } catch (error) {
-        console.log('Error the Object deleted')
-    }
-    
-}
+
     
 cargarMessages = async () => {
-     mensajes = await Mensajes.find({})     
+    
+     mensajes = await Mensajes.find({})   
      
 }
 
 newMessage = async (msj) => {
+    
     newMessage= await new Mensajes(msj)
-    await newMessage.save()
+    newMessage.save() 
    
 }
 
 
-// PAGE GENERAL
-router.get('/',(req,res) => {
-    res.render('main',{'admin':admin})
-})
 
-
-// CHANGE ADMIN
-router.get('/admin',async (req,res) => {
-    if(admin){
-        admin = false;
-        res.redirect('/productos')
-    }
-    else{
-        admin = true; 
-        res.redirect('/productos')      
-    }   
-    
-})
 
 // PAGE PRINCIPAL
-router.get('/productos',async (req,res) => { 
+router.get('/list',async (req,res) => { 
     
-    if(admin === true){
-        await cargarItems()    
-        await res.status(200)
-        await res.render('./layouts/products_admin',{'productos': productos,'admin':admin})
-    }else{
-        await cargarItems()    
-        await res.status(200)
-        await res.render('./layouts/productos',{'productos': productos,'admin':admin})
-    }   
+    try {
+        await cargarItems()
+        if(productos.length===0){
+            res.status(200).send({Mensaje:`No existen productos registrados`})
+        }
 
-})
-
-router.post('/productos/add',async (req,res) => {
-
-     await newItem(req.body)     
-
-     if(admin == true){
-        await cargarItems()  
-        await res.status(200)  
-        await res.redirect('/productos') 
-    }else{
-        await cargarItems() 
-        await res.status(200)   
-        await res.redirect('/productos') 
+        res.status(200).send({Productos:productos})
+    
+        
+    } catch (error) {
+        res.status(200).send({Error:`productos`})
     }
         
+
 })
 
-// DELETE (disponible para administradores) 
-router.get('/borrar/:codigo',async (req,res)=>{
-    try {
-         //OBTENEMOS EL ID
-         const {codigo} = req.params  
+//POST
+router.post('/add',async (req,res) => {
+   
 
-         deleteItem(codigo)
+     try {
+        await newItem(req.body) 
+        await cargarItems()  
+        
          res.status(200)
-         res.redirect('/productos')    
-        
-    } catch (error) {
-
-        console.log(error)
-        
-    }      
-                       
-})
-
-// FORM-UPDATE (disponible para administradores) 
-router.get('/editar-form/:cod',async (req,res)=>{
-    try {
-         //OBTENEMOS EL ID
-         const {cod} = req.params  
-         const product = await Productos.find({ codigo:cod})  
-         await res.status(200)        
-         await res.render('./layouts/edit',{'Producto': product }) 
-        
-    } catch (error) {
-
-        console.log(error)
-        
-    }      
-                       
-})
-
-// UPDATE (disponible para administradores) 
-router.post('/editar/:id',async (req,res)=>{
-    try {
-         //OBTENEMOS EL ID
+         res.send({Mensaje:`Producto:${req.body.nombre} registrado correctamente.`})
          
+     } catch (error) {
+        res.status(204).
+        res.send({Error:`Producto no registrado correctamente.`})
+     }
+         
+  
+        
+})
+
+// DELETE 
+router.delete('/delete/:id',async (req,res)=>{
+    try {
+         //OBTENEMOS EL ID
          const {id} = req.params  
-         const product = await Productos.findById(id)
 
-       
-
-          product.nombre = req.body.nombre 
-          product.precio=req.body.precio 
-          product.stock=req.body.stock 
-          product.descripcion=req.body.descripcion
-          console.log(product)
-          product.save()   
-           res.status(200)     
-          res.redirect('/productos') 
+         await Productos.findByIdAndDelete(id)
          
+         res.status(200).send({Mensaje:`Producto eliminado correctamente.`})    
         
     } catch (error) {
 
-        console.log(error)
+        res.status(500).send({Error:`No se ha podido eliminar el producto correctamente.`})  
         
     }      
                        
 })
-    //   ---------------------------------------------
-    //   CHAT
+
+// UPDATE  
+router.put('/update/:id',async (req,res)=>{
+             console.log('Entre al put')
+          try {
+              //OBTENEMOS EL ID         
+             const {id} = req.params  
+
+             //OBTENEMOS PRODUCTO
+             const product = await Productos.findById(id)  
+                  
+
+             //UPDATES--SET VALORES 
+              product.nombre = req.body.nombre 
+              product.precio=req.body.precio 
+              product.stock=req.body.stock 
+              product.descripcion=req.body.descripcion
+
+              try {
+                  //GUARDAMOS CAMBIOS
+                await  product.save()  
+
+                
+                res.status(200).send({Mensaje:`Producto:${product.nombre} actualizado correctamente.`})  
+                  
+              } catch (error) {
+              
+                res.status(204).send({Error:`Producto:${product.nombre} no se ha podido guardar correctamente.`}) 
+              }
+              
+          } catch (error) {
+            res.status(204).send({Error:`Producto:${product.nombre} no se ha podido actualizar correctamente.`}) 
+              
+          }     
+                       
+})
+
+//   -----------------------------------------------
+//  ------------          CHAT             ---------
 router.get('/chat',async (req,res) => {
-     
-    await cargarMessages()
-    res.status(200)    
-    await res.render('./layouts/messages',{'mensajes':mensajes})
+     try {
+         await cargarMessages()
+        res.status(200) 
+        if(mensajes.length===0)   {
+            res.send({Mensaje:`No existen mensajes para visualizar.`}) 
+        }
+        res.send({Mensajes:mensajes})
+         
+     } catch (error) {
+         res.status(204)
+         res.send({Error:`No se ha podido visualizar los mensajes correctamente.`})
+     }
+    
 })
 
 router.post('/chat/add', async (req,res) => {
+    try {
+        let time = moment().format(); 
+        const  addNewMessage = {autor:req.body.autor,
+                            mensaje:req.body.mensaje,
+                            now:moment(time).format('DD/MM/YYYY HH:mm')}    
+
+        await newMessage(addNewMessage)
+
+        res.status(200)
+        res.send({Mensaje:`Nuevo mensaje registrado.`})
+    } catch (error) {
+        res.status(204).send({Error:`No se ha podido registrar correctamente el mensaje.`}) 
+            
+    }
+  
     
-    let time = moment().format(); 
-    const  addNewMessage = {autor:req.body.autor,
-                        mensaje:req.body.mensaje,
-                        now:moment(time).format('DD/MM/YYYY HH:MM:SS')}    
-    await newMessage(addNewMessage)
-    await res.status(200) 
-    await res.redirect('/chat')
 })
 
 module.exports=router
