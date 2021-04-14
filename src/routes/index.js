@@ -1,100 +1,69 @@
 const express = require('express')
-
 const router = express.Router()
 
-const path = require('path')
-
-const moment = require('moment')
-
-
-const Mensajes = require('../models/messages')
 
 const bodyParser = require('body-parser');
 
 let server = require('../app')
-let admin = server.admin
 
 // create application/x-www-form-urlencoded parser
 router.use=bodyParser.urlencoded({ extended: true })
 
 const normalizr = require("normalizr")
-const util =require('util')
+const util =require('util');
 
 const normalizar= normalizr.normalize
 const desnormalizar= normalizr.denormalize
 const schema = normalizr.schema
 
+
+const { v4: uuidv4 } = require('uuid');
+
 //DEFINIMOS UN NUEVO ESQUEMA DE USUARIOS
-const user = new schema.Entity('users',{idAttribute:'email'})
+const autor = new schema.Entity('user',)
 
 //DEFINIMOS UN NUEVO ESQUEMA TEXTO
-const text = new schema.Entity('texts')
+const mensaje = new schema.Entity('text')
 
-//DEFINIMOS UN NUEVO ESQUEMA DE MENSAJES
-const message = new schema.Entity('message',{
-    author:user,
-    text:text
-},{
-    idAttribute:"_id"
-})
+//DEFINIMOS UN NUEVO ESQUEMA DE MENSAJE
+const message = new schema.Entity('message',{    
+    autor:autor,
+    mensaje:mensaje})
 
-function toObject(arr) {
-    let texto
-    for (var i = 0; i < arr.length; ++i){
-        if(i==0){
-            texto =arr[i];
-        }else{
-            texto +=","+arr[i];
-        }
-        
-    }
-      
-    return texto
-  }
-  
 
 function print(myObj){
     console.log(util.inspect(myObj,false,12,true))
 }
+let data=[]
 
-cargarMessages = async () => {
-    
-     mensajes = await Mensajes.find({})   
-     data =toObject(mensajes)
-     try {
-         dataParsed= JSON.stringify(data, null, '\t')
-        console.log(dataParsed)
-         
-     } catch (error) {
-         console.log(error)
-     }
+
+loadMessages = async () => {     
      
-     
-    
-     
-     
-     
+        
+    return dataNormalize         
 }
 
-newMessage = async (msj) => {
+newMessage = async (mess) => {
     
-    newMessage= await new Mensajes(msj)
+    newMessage= await new Mensajes(mess)
     newMessage.save() 
    
 }
-
-
-
 //   -----------------------------------------------
 //  ------------          CHAT             ---------
 router.get('/chat',async (req,res) => {
      try {
-         await cargarMessages()
+               
         res.status(200) 
-        if(mensajes.length===0)   {
+        if(!data)   {
             res.send({Mensaje:`No existen mensajes para visualizar.`}) 
         }
-        res.send({Mensajes:mensajes})
+        let dataNormalize=normalizar(data,[message]) 
+        let dataDesnormalize=normalizar(data,[message])
+        const tamDataDesnormalizada=JSON.stringify(dataDesnormalize).length 
+        const tamDataNormalizada=JSON.stringify(dataNormalize).length 
+       
+        res.send({Mensajes:`Compresion:${tamDataDesnormalizada-tamDataNormalizada}`,Data:dataDesnormalize})
          
      } catch (error) {
          res.status(204)
@@ -105,20 +74,23 @@ router.get('/chat',async (req,res) => {
 
 router.post('/chat/add', async (req,res) => {
     try {
-        let time = moment().format(); 
-        const  addNewMessage = {autor:req.body.autor,
-                            mensaje:req.body.mensaje,
-                            now:moment(time).format('DD/MM/YYYY HH:mm')}    
-
-        await newMessage(addNewMessage)
-
+       console.log(req.body)
+        const  addNewMessage = {id:uuidv4(),
+                                autor: {id:req.body.id,
+                                        nombre: req.body.nombre,
+                                        apellido: req.body.apellido,
+                                        edad: req.body.edad,
+                                        alias: req.body.alias,
+                                        avatar: req.body.avatar},
+                                mensaje:req.body.mensaje
+                                } 
+       
+        data.push(addNewMessage)
         res.status(200)
         res.send({Mensaje:`Nuevo mensaje registrado.`})
     } catch (error) {
-        res.status(204).send({Error:`No se ha podido registrar correctamente el mensaje.`}) 
-            
+        res.status(204).send({Error:`No se ha podido registrar correctamente el mensaje.`})             
     }
-  
     
 })
 

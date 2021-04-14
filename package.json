@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.7",
-    "normalizr": "^3.6.1"
+    "normalizr": "^3.6.1",
+    "uuid": "^8.3.2"
   }
 }
